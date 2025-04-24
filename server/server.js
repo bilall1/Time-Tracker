@@ -54,6 +54,28 @@ app.post('/api/entries', (req, res) => {
   }
 });
 
+// Update entry
+app.put('/api/entries/:id', (req, res) => {
+  try {
+    const entries = readEntries();
+    const index = entries.findIndex(entry => entry.id === parseInt(req.params.id));
+    if (index === -1) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+    entries[index] = {
+      ...entries[index],
+      ...req.body,
+      startTime: new Date(req.body.startTime),
+      endTime: req.body.endTime ? new Date(req.body.endTime) : null
+    };
+    writeEntries(entries);
+    res.json(entries[index]);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating entry' });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 
