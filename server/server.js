@@ -36,6 +36,24 @@ app.get('/api/entries', (req, res) => {
   }
 });
 
+// Create new entry
+app.post('/api/entries', (req, res) => {
+  try {
+    const entries = readEntries();
+    const newEntry = {
+      id: Date.now(),
+      ...req.body,
+      startTime: new Date(req.body.startTime),
+      endTime: req.body.endTime ? new Date(req.body.endTime) : null
+    };
+    entries.push(newEntry);
+    writeEntries(entries);
+    res.status(201).json(newEntry);
+  } catch (error) {
+    res.status(500).json({ error: 'Error creating entry' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 
