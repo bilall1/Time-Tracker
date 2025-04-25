@@ -39,13 +39,41 @@ main {
   margin-bottom: 2rem;
 }
 
+.input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.task-select {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: white;
+}
+
 .description-input {
   width: 100%;
-  padding: 12px;
+  padding: 18px;
   font-size: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  margin-bottom: 1rem;
+}
+
+.filter-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
 }
 
 .button-group {

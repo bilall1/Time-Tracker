@@ -1,21 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-
-interface TimeEntry {
-  id: number;
-  description: string;
-  startTime: Date;
-  endTime: Date | null;
-  duration: number;
-}
-
-const API_URL = 'http://localhost:3001/api';
+import { API_URL, TimeEntry, formatDuration } from './common';
 
 function App() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [filterDate, setFilterDate] = useState<string>('');
+  const [filterTask, setFilterTask] = useState<string>('');
+
+  // Load saved state from localStorage
+  useEffect(() => {
+    const savedCurrentEntry = localStorage.getItem('currentEntry');
+    if (savedCurrentEntry) {
+      const parsed = JSON.parse(savedCurrentEntry);
+      setCurrentEntry({
+        ...parsed,
+        startTime: new Date(parsed.startTime),
+        endTime: parsed.endTime ? new Date(parsed.endTime) : null
+      });
+    }
+  }, []);
+
+  // Save current entry to localStorage
+  useEffect(() => {
+    if (currentEntry) {
+      localStorage.setItem('currentEntry', JSON.stringify(currentEntry));
+    } else {
+      localStorage.removeItem('currentEntry');
+    }
+  }, [currentEntry]);
 
   useEffect(() => {
     fetchEntries();
@@ -98,12 +113,22 @@ function App() {
     }
   };
 
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  // Get unique task descriptions for dropdown
+  const uniqueTasks = Array.from(new Set(entries.map(entry => entry.description))).sort();
+
+  // Filter entries based on date and task
+  const filteredEntries = entries.filter(entry => {
+    const entryDate = new Date(entry.startTime);
+    const filterDateObj = filterDate ? new Date(filterDate) : null;
+    
+    // Convert both dates to local date strings for comparison
+    const entryDateStr = entryDate.toLocaleDateString();
+    const filterDateStr = filterDateObj ? filterDateObj.toLocaleDateString() : '';
+    
+    const matchesDate = !filterDate || entryDateStr === filterDateStr;
+    const matchesTask = !filterTask || entry.description.toLowerCase().includes(filterTask.toLowerCase());
+    return matchesDate && matchesTask;
+  });
 
   return (
     <div className="App">
@@ -113,13 +138,25 @@ function App() {
       <main>
         {error && <div className="error-message">{error}</div>}
         <div className="timer-container">
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="What are you working on?"
-            className="description-input"
-          />
+          <div className="input-group">
+            <select
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="task-select"
+            >
+              <option value="">Select a task or type new one</option>
+              {uniqueTasks.map(task => (
+                <option key={task} value={task}>{task}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter task name"
+              className="description-input"
+            />
+          </div>
           <div className="button-group">
             <button
               onClick={startTimer}
@@ -138,15 +175,31 @@ function App() {
           </div>
         </div>
 
+        <div className="filter-container">
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="filter-input"
+          />
+          <input
+            type="text"
+            value={filterTask}
+            onChange={(e) => setFilterTask(e.target.value)}
+            placeholder="Filter by task"
+            className="filter-input"
+          />
+        </div>
+
         <div className="entries-container">
           <h2>Time Entries</h2>
           <div className="entries-list">
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <div key={entry.id} className="entry-card">
                 <h3>{entry.description}</h3>
                 <p>Duration: {formatDuration(entry.duration)}</p>
-                <p>Started: {entry.startTime.toLocaleTimeString()}</p>
-                <p>Ended: {entry.endTime?.toLocaleTimeString()}</p>
+                <p>Started: {entry.startTime.toLocaleString()}</p>
+                <p>Ended: {entry.endTime ? entry.endTime.toLocaleString() : 'In Progress'}</p>
               </div>
             ))}
           </div>
